@@ -1,0 +1,39 @@
+package CarDataTypes
+public
+	with Data_Model;
+	
+	-- Typy danych
+		
+	data VideoData
+		properties
+			Data_Model::Data_Representation => String;
+	end VideoData;
+	
+	data DistanceData
+		properties
+			Data_Model::Data_Representation => Integer;
+	end DistanceData;
+	
+	data ConfigData
+		properties
+			Data_Model::Data_Representation => String;
+	end ConfigData;
+	
+	data ReverseGearOn
+		properties
+			Data_Model::Data_Representation => Boolean;
+	end ReverseGearOn;
+	
+	data SteeringWheelPosition
+		properties
+			Data_Model::Data_Representation => Integer;
+	end SteeringWheelPosition;
+	
+	-- Ramka danych CAN
+		
+	data CAN_frame
+		properties
+			Data_Model::Data_Representation => String;
+	end CAN_frame;
+	
+end CarDataTypes;

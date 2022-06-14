@@ -1,0 +1,116 @@
+package MainController
+public
+	--with Base_Types;	
+	with CAN_bus;
+	with CarDataTypes;
+	
+	-- Sterownik g³ówny
+	
+	processor MainController
+		features
+    		CAN_data: requires bus access CAN_bus::CAN;
+	end MainController;
+	
+	thread main_controller_CANcomms
+	  features
+	    CanDataOutside1 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataOutside2 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataOutside3 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataOutside4 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataOutside5 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataOutside6 : in out data port CarDataTypes::CAN_Frame;
+	    CanDataInside : in out data port CarDataTypes::CAN_Frame;
+	  properties
+	    Dispatch_Protocol => Periodic;
+	    Dispatch_Offset => 	2ms;
+	    Deadline => 15ms;	
+	    Period => 20ms;
+	    Compute_Execution_Time => 0ms..2ms;	
+	end main_controller_CANcomms;
+	 
+	thread implementation main_controller_CANcomms.impl
+	end main_controller_CANcomms.impl;
+	
+	thread main_controller_process
+	  features
+	    CanData : in out data port CarDataTypes::CAN_Frame;
+	    DisplayConfig : in out data port CarDataTypes::ConfigData;
+	    VideoOut : out data port CarDataTypes::VideoData;
+	  properties
+	    Dispatch_Protocol => Periodic;
+	    Dispatch_Offset => 	2ms;
+	    Deadline => 15ms;	
+	    Period => 20ms;
+	    Compute_Execution_Time => 0ms..2ms;	
+	end main_controller_process;
+	
+	thread implementation main_controller_process.impl
+	end main_controller_process.impl;
+	
+	thread main_controller_video
+	  features
+	    VideoIn : in data port CarDataTypes::VideoData;
+	    VideoOut : out data port CarDataTypes::VideoData;
+	  properties
+	    Dispatch_Protocol => Periodic;
+	    Dispatch_Offset => 	2ms;
+	    Deadline => 15ms;	
+	    Period => 20ms;
+	    Compute_Execution_Time => 0ms..2ms;	
+	end main_controller_video;
+	
+	thread implementation main_controller_video.impl
+	end main_controller_video.impl;
+	
+	thread main_controller_display_comms
+	  features
+	    InsideConfig : in out data port CarDataTypes::ConfigData;
+	    DisplayInput : in data port CarDataTypes::ConfigData;
+	    DisplayConfig : out data port CarDataTypes::ConfigData;
+	  properties
+	    Dispatch_Protocol => Periodic;
+	    Dispatch_Offset => 	2ms;
+	    Deadline => 15ms;	
+	    Period => 20ms;
+	    Compute_Execution_Time => 0ms..2ms;	
+	end main_controller_display_comms;
+	
+	thread implementation main_controller_display_comms.impl
+	end main_controller_display_comms.impl;
+	
+	process main_controller_proc
+		features
+			CAN_data1: in out data port CarDataTypes::CAN_frame;
+			CAN_data2: in out data port CarDataTypes::CAN_frame;
+			CAN_data3: in out data port CarDataTypes::CAN_frame;
+			CAN_data4: in out data port CarDataTypes::CAN_frame;
+			CAN_data5: in out data port CarDataTypes::CAN_frame;
+			CAN_data6: in out data port CarDataTypes::CAN_frame;
+			VideoOut: out data port CarDataTypes::VideoData;
+			VideoConfig: out data port CarDataTypes::ConfigData;
+			VideoInput: in data port CarDataTypes::ConfigData;
+	end main_controller_proc;
+	 
+	process implementation main_controller_proc.impl
+		subcomponents
+			CANcomms: thread main_controller_CANcomms.impl;
+			main_controller_thread: thread main_controller_process.impl;
+			video: thread main_controller_video.impl;
+			display_comms: thread main_controller_display_comms.impl;
+		connections
+			con1_1: port CAN_data1 <-> CANcomms.CanDataOutside1;
+			con1_2: port CAN_data2 <-> CANcomms.CanDataOutside2;
+			con1_3: port CAN_data3 <-> CANcomms.CanDataOutside3;
+			con1_4: port CAN_data4 <-> CANcomms.CanDataOutside4;
+			con1_5: port CAN_data5 <-> CANcomms.CanDataOutside5;
+			con1_6: port CAN_data6 <-> CANcomms.CanDataOutside6;
+			con2_1: port CANcomms.CanDataInside <-> main_controller_thread.CanData;
+			con2_2: port main_controller_thread.VideoOut -> video.VideoIn;
+			con2_3: port main_controller_thread.DisplayConfig <-> display_comms.InsideConfig;
+			con3_1: port video.VideoOut -> VideoOut;
+			con3_2: port display_comms.DisplayConfig -> VideoConfig;
+			con3_3: port VideoInput -> display_comms.DisplayInput;
+	end main_controller_proc.impl;
+	
+
+end MainController;

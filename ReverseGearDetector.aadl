@@ -1,0 +1,79 @@
+package ReverseGearDetector
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device ReverseGearDetector
+		features
+			ReverseGear: out data port CarDataTypes::ReverseGearOn;
+	end ReverseGearDetector;
+
+	processor ReverseGearDetectorController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end ReverseGearDetectorController;
+
+	thread reverse_gear_detector_receive
+		features
+			ReverseGearIn: in data port CarDataTypes::ReverseGearOn;
+			ReverseGearOut: out data port CarDataTypes::ReverseGearOn;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end reverse_gear_detector_receive;
+
+	thread implementation reverse_gear_detector_receive.impl
+	end reverse_gear_detector_receive.impl;
+
+	thread reverse_gear_detector_process
+		features
+			ReverseGearIn: in data port CarDataTypes::ReverseGearOn;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end reverse_gear_detector_process;
+
+	thread implementation reverse_gear_detector_process.impl
+	end reverse_gear_detector_process.impl;
+
+	thread reverse_gear_detector_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end reverse_gear_detector_CANcomms;
+
+	thread implementation reverse_gear_detector_CANcomms.impl
+	end reverse_gear_detector_CANcomms.impl;
+
+	process reverse_gear_detector_proc
+		features
+			ReverseGearOn: in data port CarDataTypes::ReverseGearOn;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end reverse_gear_detector_proc;
+
+	process implementation reverse_gear_detector_proc.impl
+		subcomponents
+			receive: thread reverse_gear_detector_receive.impl;
+			data_process: thread reverse_gear_detector_process.impl;
+			CAN_comms: thread reverse_gear_detector_CANcomms.impl;
+		connections
+			con1: port ReverseGearOn -> receive.ReverseGearIn;
+			con2: port receive.ReverseGearOut -> data_process.ReverseGearIn;
+			con3: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con4: port CAN_comms.CanDataOutside <-> CAN_data;
+	end reverse_gear_detector_proc.impl;
+
+end ReverseGearDetector;

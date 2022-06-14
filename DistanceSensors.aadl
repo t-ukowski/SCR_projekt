@@ -1,0 +1,94 @@
+package DistanceSensors
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device DistanceSensor
+		features
+			Distance: out data port CarDataTypes::DistanceData;
+	end DistanceSensor;
+
+	processor DistanceSensorController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end DistanceSensorController;
+
+	thread distance_sensor_receive
+		features
+			DistanceIn1: in data port CarDataTypes::DistanceData;
+			DistanceIn2: in data port CarDataTypes::DistanceData;
+			DistanceIn3: in data port CarDataTypes::DistanceData;
+			DistanceIn4: in data port CarDataTypes::DistanceData;
+			DistanceIn5: in data port CarDataTypes::DistanceData;
+			DistanceIn6: in data port CarDataTypes::DistanceData;
+			DistanceOut: out data port CarDataTypes::DistanceData;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end distance_sensor_receive;
+
+	thread implementation distance_sensor_receive.impl
+	end distance_sensor_receive.impl;
+
+	thread distance_sensor_process
+		features
+			DistanceIn: in data port CarDataTypes::DistanceData;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end distance_sensor_process;
+
+	thread implementation distance_sensor_process.impl
+	end distance_sensor_process.impl;
+
+	thread distance_sensor_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end distance_sensor_CANcomms;
+
+	thread implementation distance_sensor_CANcomms.impl
+	end distance_sensor_CANcomms.impl;
+
+	process distance_sensor_proc
+		features
+			DistanceDataIn1: in data port CarDataTypes::DistanceData;
+			DistanceDataIn2: in data port CarDataTypes::DistanceData;
+			DistanceDataIn3: in data port CarDataTypes::DistanceData;
+			DistanceDataIn4: in data port CarDataTypes::DistanceData;
+			DistanceDataIn5: in data port CarDataTypes::DistanceData;
+			DistanceDataIn6: in data port CarDataTypes::DistanceData;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end distance_sensor_proc;
+
+	process implementation distance_sensor_proc.impl
+		subcomponents
+			receive: thread distance_sensor_receive.impl;
+			data_process: thread distance_sensor_process.impl;
+			CAN_comms: thread distance_sensor_CANcomms.impl;
+		connections
+			con1: port DistanceDataIn1 -> receive.DistanceIn1;
+			con2: port DistanceDataIn2 -> receive.DistanceIn2;
+			con3: port DistanceDataIn3 -> receive.DistanceIn3;
+			con4: port DistanceDataIn4 -> receive.DistanceIn4;
+			con5: port DistanceDataIn5 -> receive.DistanceIn5;
+			con6: port DistanceDataIn6 -> receive.DistanceIn6;
+			con7: port receive.DistanceOut -> data_process.DistanceIn;
+			con8: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con9: port CAN_comms.CanDataOutside <-> CAN_data;
+	end distance_sensor_proc.impl;
+
+end DistanceSensors;

@@ -1,0 +1,79 @@
+package SteeringWheelPositionEngine
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device SteeringWheelPositionEngine
+		features
+			EngineConfig: in data port CarDataTypes::ConfigData;
+	end SteeringWheelPositionEngine;
+
+	processor SteeringWheelPositionEngineController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end SteeringWheelPositionEngineController;
+
+	thread steering_wheel_position_engine_config
+		features
+			ConfigIn: in data port CarDataTypes::ConfigData;
+			ConfigOut: out data port CarDataTypes::ConfigData;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_engine_config;
+
+	thread implementation steering_wheel_position_engine_config.impl
+	end steering_wheel_position_engine_config.impl;
+
+	thread steering_wheel_position_engine_process
+		features
+			ConfigOut: out data port CarDataTypes::ConfigData;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_engine_process;
+
+	thread implementation steering_wheel_position_engine_process.impl
+	end steering_wheel_position_engine_process.impl;
+
+	thread steering_wheel_position_engine_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_engine_CANcomms;
+
+	thread implementation steering_wheel_position_engine_CANcomms.impl
+	end steering_wheel_position_engine_CANcomms.impl;
+
+	process steering_wheel_position_engine_proc
+		features
+			SteeringWheelPositionEngineConfig: out data port CarDataTypes::ConfigData;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end steering_wheel_position_engine_proc;
+
+	process implementation steering_wheel_position_engine_proc.impl
+		subcomponents
+			config: thread steering_wheel_position_engine_config.impl;
+			data_process: thread steering_wheel_position_engine_process.impl;
+			CAN_comms: thread steering_wheel_position_engine_CANcomms.impl;
+		connections
+			con1: port config.ConfigOut -> SteeringWheelPositionEngineConfig;
+			con2: port data_process.ConfigOut -> config.ConfigIn;
+			con3: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con4: port CAN_comms.CanDataOutside <-> CAN_data;
+	end steering_wheel_position_engine_proc.impl;
+
+end SteeringWheelPositionEngine;

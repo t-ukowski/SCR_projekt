@@ -1,0 +1,108 @@
+package CarSystem
+public
+	--with Base_Types;	
+	with CAN_bus;
+	with DistanceSensors;
+	with Cameras;
+	with MainController;
+	with Display;
+	with Buzzer;
+	with ReverseGearDetector;
+	with SteeringWheelPositionDetector;
+	with SteeringWheelPositionEngine;
+	
+	-- SYSTEM --
+	
+	system CarSystem
+	end CarSystem;
+	 
+	system implementation CarSystem.impl
+		subcomponents
+			-- urz¹dzenia
+			distance_sensor1: device DistanceSensors::DistanceSensor;
+			distance_sensor2: device DistanceSensors::DistanceSensor;
+			distance_sensor3: device DistanceSensors::DistanceSensor;
+			distance_sensor4: device DistanceSensors::DistanceSensor;
+			distance_sensor5: device DistanceSensors::DistanceSensor;
+			distance_sensor6: device DistanceSensors::DistanceSensor;
+			camera_front: device Cameras::Camera;
+			camera_back: device Cameras::Camera;
+			camera_right: device Cameras::Camera;
+			camera_left: device Cameras::Camera;
+			touch_screen: device Display::Display;
+			buzzer: device Buzzer::Buzzer;
+			clock: device Buzzer::Clock;
+			reverse_gear_detector: device ReverseGearDetector::ReverseGearDetector;
+			steering_wheel_position_detector: device SteeringWheelPositionDetector::SteeringWheelPositionDetector;
+			steering_wheel_position_engine: device SteeringWheelPositionEngine::SteeringWheelPositionEngine;
+			-- procesy i procesory
+			distance_sensor_proc: process DistanceSensors::distance_sensor_proc.impl;
+			distance_sensor_controller: processor DistanceSensors::DistanceSensorController;
+			camera_proc: process Cameras::camera_proc.impl;
+			camera_controller: processor Cameras::CameraController;
+			buzzer_proc: process Buzzer::buzzer_proc.impl;
+			buzzer_controller: processor Buzzer::BuzzerController;
+			reverse_gear_detector_proc: process ReverseGearDetector::reverse_gear_detector_proc.impl;
+			reverse_gear_detector_controller: processor ReverseGearDetector::ReverseGearDetectorController;
+			steering_wheel_position_detector_proc: process SteeringWheelPositionDetector::steering_wheel_position_detector_proc.impl;
+			steering_wheel_position_detector_controller: processor SteeringWheelPositionDetector::SteeringWheelPositionDetectorController;
+			steering_wheel_position_engine_proc: process SteeringWheelPositionEngine::steering_wheel_position_engine_proc.impl;
+			steering_wheel_position_engine_controller: processor SteeringWheelPositionEngine::SteeringWheelPositionEngineController;
+			main_controller_proc: process MainController::main_controller_proc.impl;
+			main_controller: processor MainController::MainController;
+			-- magistrala
+  			CAN_bus : bus CAN_bus::CAN;
+		connections
+			-- fizyczne po³¹czenia z magistral¹
+  			CAN1: bus access CAN_bus -> distance_sensor_controller.CAN_data;
+  			CAN2: bus access CAN_bus -> camera_controller.CAN_data;
+  			CAN3: bus access CAN_bus -> buzzer_controller.CAN_data;
+  			CAN4: bus access CAN_bus -> reverse_gear_detector_controller.CAN_data;
+  			CAN5: bus access CAN_bus -> steering_wheel_position_detector_controller.CAN_data;
+  			CAN6: bus access CAN_bus -> steering_wheel_position_engine_controller.CAN_data;
+  			CAN7: bus access CAN_bus -> main_controller.CAN_data;
+  			-- po³¹czenia urz¹dzeñ z ich mikrokontrolerami
+  			distance_sensor_con1: port distance_sensor1.Distance -> distance_sensor_proc.DistanceDataIn1;
+  			distance_sensor_con2: port distance_sensor2.Distance -> distance_sensor_proc.DistanceDataIn2;
+  			distance_sensor_con3: port distance_sensor3.Distance -> distance_sensor_proc.DistanceDataIn3;
+  			distance_sensor_con4: port distance_sensor4.Distance -> distance_sensor_proc.DistanceDataIn4;
+  			distance_sensor_con5: port distance_sensor5.Distance -> distance_sensor_proc.DistanceDataIn5;
+  			distance_sensor_con6: port distance_sensor6.Distance -> distance_sensor_proc.DistanceDataIn6;
+  			camera_con1: port camera_front.Video -> camera_proc.VideoDataIn1;
+  			camera_con2: port camera_back.Video -> camera_proc.VideoDataIn2;
+  			camera_con3: port camera_right.Video -> camera_proc.VideoDataIn3;
+  			camera_con4: port camera_left.Video -> camera_proc.VideoDataIn4;
+  			buzzer_con: port buzzer_proc.BuzzerConfig -> buzzer.BuzzConfig;
+  			buzzer_clock_con: port clock.Clk -> buzzer_proc.Clk;
+  			reverse_gear_detector_con: port reverse_gear_detector.ReverseGear -> reverse_gear_detector_proc.ReverseGearOn;
+  			steering_wheel_position_detector_con: port steering_wheel_position_detector.SteeringWheelPosition -> steering_wheel_position_detector_proc.SteeringWheelPosition;
+  			steering_wheel_position_engine_con: port steering_wheel_position_engine_proc.SteeringWheelPositionEngineConfig -> steering_wheel_position_engine.EngineConfig;
+  			display_con1: port main_controller_proc.VideoOut -> touch_screen.Video;
+  			display_con2: port main_controller_proc.VideoConfig -> touch_screen.Config;
+  			display_con3: port touch_screen.Input -> main_controller_proc.VideoInput;
+  			-- po³¹czenia pomiêdzy mikrokontrolerami
+  			distance_sensor_main_controller: port distance_sensor_proc.CAN_data <-> main_controller_proc.CAN_data1;
+  			camera_main_controller: port camera_proc.CAN_data <-> main_controller_proc.CAN_data2;
+  			buzzer_main_controller: port buzzer_proc.CAN_data <-> main_controller_proc.CAN_data3;
+  			reverse_gear_detector_main_controller: port reverse_gear_detector_proc.CAN_data <-> main_controller_proc.CAN_data4;
+  			steering_wheel_position_detector_main_controller: port steering_wheel_position_detector_proc.CAN_data <-> main_controller_proc.CAN_data5;
+  			steering_wheel_position_engine_main_controller: port steering_wheel_position_engine_proc.CAN_data <-> main_controller_proc.CAN_data6;
+		properties
+			-- po³¹czenia pomiêdzy kontrolerami jako po³¹czenia przez CAN
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to distance_sensor_main_controller;
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to camera_main_controller;
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to buzzer_main_controller;
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to reverse_gear_detector_main_controller;
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to steering_wheel_position_detector_main_controller;
+  			Actual_Connection_Binding  => (reference(CAN_bus)) applies to steering_wheel_position_engine_main_controller;
+  			-- procesy jako elementy wykonywane na mikrokontrolerach
+  			Actual_Processor_Binding => (reference(distance_sensor_controller)) applies to distance_sensor_proc;
+  			Actual_Processor_Binding => (reference(camera_controller)) applies to camera_proc;
+  			Actual_Processor_Binding => (reference(buzzer_controller)) applies to buzzer_proc;
+  			Actual_Processor_Binding => (reference(reverse_gear_detector_controller)) applies to reverse_gear_detector_proc;
+  			Actual_Processor_Binding => (reference(steering_wheel_position_detector_controller)) applies to steering_wheel_position_detector_proc;
+  			Actual_Processor_Binding => (reference(steering_wheel_position_engine_controller)) applies to steering_wheel_position_engine_proc;
+  			Actual_Processor_Binding => (reference(main_controller)) applies to main_controller_proc;
+	end CarSystem.impl;
+
+end CarSystem;

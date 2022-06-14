@@ -1,0 +1,9 @@
+package CAN_bus
+public
+	
+	-- Magistrala
+	
+	bus CAN
+	end CAN;
+	
+end CAN_bus;

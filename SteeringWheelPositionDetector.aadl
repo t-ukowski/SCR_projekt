@@ -1,0 +1,79 @@
+package SteeringWheelPositionDetector
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device SteeringWheelPositionDetector
+		features
+			SteeringWheelPosition: out data port CarDataTypes::SteeringWheelPosition;
+	end SteeringWheelPositionDetector;
+
+	processor SteeringWheelPositionDetectorController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end SteeringWheelPositionDetectorController;
+
+	thread steering_wheel_position_detector_receive
+		features
+			SteeringWheelPositionIn: in data port CarDataTypes::SteeringWheelPosition;
+			SteeringWheelPositionOut: out data port CarDataTypes::SteeringWheelPosition;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_detector_receive;
+
+	thread implementation steering_wheel_position_detector_receive.impl
+	end steering_wheel_position_detector_receive.impl;
+
+	thread steering_wheel_position_detector_process
+		features
+			SteeringWheelPositionIn: in data port CarDataTypes::SteeringWheelPosition;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_detector_process;
+
+	thread implementation steering_wheel_position_detector_process.impl
+	end steering_wheel_position_detector_process.impl;
+
+	thread steering_wheel_position_detector_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end steering_wheel_position_detector_CANcomms;
+
+	thread implementation steering_wheel_position_detector_CANcomms.impl
+	end steering_wheel_position_detector_CANcomms.impl;
+
+	process steering_wheel_position_detector_proc
+		features
+			SteeringWheelPosition: in data port CarDataTypes::SteeringWheelPosition;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end steering_wheel_position_detector_proc;
+
+	process implementation steering_wheel_position_detector_proc.impl
+		subcomponents
+			receive: thread steering_wheel_position_detector_receive.impl;
+			data_process: thread steering_wheel_position_detector_process.impl;
+			CAN_comms: thread steering_wheel_position_detector_CANcomms.impl;
+		connections
+			con1: port SteeringWheelPosition -> receive.SteeringWheelPositionIn;
+			con2: port receive.SteeringWheelPositionOut -> data_process.SteeringWheelPositionIn;
+			con3: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con4: port CAN_comms.CanDataOutside <-> CAN_data;
+	end steering_wheel_position_detector_proc.impl;
+
+end SteeringWheelPositionDetector;

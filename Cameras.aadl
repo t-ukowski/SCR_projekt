@@ -1,0 +1,88 @@
+package Cameras
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device Camera
+		features
+			Video: out data port CarDataTypes::VideoData;
+	end Camera;
+
+	processor CameraController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end CameraController;
+
+	thread camera_receive
+		features
+			VideoIn1: in data port CarDataTypes::VideoData;
+			VideoIn2: in data port CarDataTypes::VideoData;
+			VideoIn3: in data port CarDataTypes::VideoData;
+			VideoIn4: in data port CarDataTypes::VideoData;
+			VideoOut: out data port CarDataTypes::VideoData;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end camera_receive;
+
+	thread implementation camera_receive.impl
+	end camera_receive.impl;
+
+	thread camera_process
+		features
+			DistanceIn: in data port CarDataTypes::VideoData;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end camera_process;
+
+	thread implementation camera_process.impl
+	end camera_process.impl;
+
+	thread camera_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end camera_CANcomms;
+
+	thread implementation camera_CANcomms.impl
+	end camera_CANcomms.impl;
+
+	process camera_proc
+		features
+			VideoDataIn1: in data port CarDataTypes::VideoData;
+			VideoDataIn2: in data port CarDataTypes::VideoData;
+			VideoDataIn3: in data port CarDataTypes::VideoData;
+			VideoDataIn4: in data port CarDataTypes::VideoData;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end camera_proc;
+
+	process implementation camera_proc.impl
+		subcomponents
+			receive: thread camera_receive.impl;
+			data_process: thread camera_process.impl;
+			CAN_comms: thread camera_CANcomms.impl;
+		connections
+			con1: port VideoDataIn1 -> receive.VideoIn1;
+			con2: port VideoDataIn2 -> receive.VideoIn2;
+			con3: port VideoDataIn3 -> receive.VideoIn3;
+			con4: port VideoDataIn4 -> receive.VideoIn4;
+			con7: port receive.VideoOut -> data_process.DistanceIn;
+			con8: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con9: port CAN_comms.CanDataOutside <-> CAN_data;
+	end camera_proc.impl;
+
+end Cameras;

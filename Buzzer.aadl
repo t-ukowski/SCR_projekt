@@ -1,0 +1,87 @@
+package Buzzer
+public
+	with CarDataTypes;
+	with CAN_bus;
+
+	device Buzzer
+		features
+			BuzzConfig: in data port CarDataTypes::ConfigData;
+	end Buzzer;
+	
+	device Clock
+		features
+			Clk: out event port;
+	end Clock;
+
+	processor BuzzerController
+		features
+			CAN_data: requires bus access CAN_bus::CAN;
+	end BuzzerController;
+
+	thread buzzer_config
+		features
+			ConfigIn: in data port CarDataTypes::ConfigData;
+			ConfigOut: out data port CarDataTypes::ConfigData;
+			Clk: in event port;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end buzzer_config;
+
+	thread implementation buzzer_config.impl
+	end buzzer_config.impl;
+
+	thread buzzer_process
+		features
+			ConfigOut: out data port CarDataTypes::ConfigData;
+			CanData: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end buzzer_process;
+
+	thread implementation buzzer_process.impl
+	end buzzer_process.impl;
+
+	thread buzzer_CANcomms
+		features
+			CanDataInside: in out data port CarDataTypes::CAN_frame;
+			CanDataOutside: in out data port CarDataTypes::CAN_frame;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 2ms;
+			Deadline => 15ms;
+			Period => 20ms;
+			Compute_Execution_Time => 0ms .. 2ms;
+	end buzzer_CANcomms;
+
+	thread implementation buzzer_CANcomms.impl
+	end buzzer_CANcomms.impl;
+
+	process buzzer_proc
+		features
+			BuzzerConfig: out data port CarDataTypes::ConfigData;
+			Clk: in event port;
+			CAN_data: in out data port CarDataTypes::CAN_frame;
+	end buzzer_proc;
+
+	process implementation buzzer_proc.impl
+		subcomponents
+			config: thread buzzer_config.impl;
+			data_process: thread buzzer_process.impl;
+			CAN_comms: thread buzzer_CANcomms.impl;
+		connections
+			con1: port config.ConfigOut -> BuzzerConfig;
+			con2: port data_process.ConfigOut -> config.ConfigIn;
+			con3: port data_process.CanData <-> CAN_comms.CanDataInside;
+			con4: port CAN_comms.CanDataOutside <-> CAN_data;
+			con5: port Clk -> config.Clk;
+	end buzzer_proc.impl;
+
+end Buzzer;

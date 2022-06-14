@@ -1,0 +1,14 @@
+package Display
+public
+	with CarDataTypes;
+	
+	-- Wyœwietlacz
+		
+	device Display
+		features
+			Video: in data port CarDataTypes::VideoData;
+			Config: in data port CarDataTypes::ConfigData;
+			Input: out data port CarDataTypes::ConfigData;
+	end Display;
+	
+end Display;
